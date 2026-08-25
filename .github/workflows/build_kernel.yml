@@ -35,10 +35,9 @@ permissions:
 
 env:
   G_WORKSPACE: ${{ github.workspace }}
-  G_BIN: ${{ github.workspace }}/bin
   G_EXT: ${{ github.workspace }}/external_deps
-  G_KERNEL: ${{ github.workspace }}/kernel-6.6
-  DEFCONFIG: kernel-6.6/arch/arm64/configs/gki_defconfig
+  G_KERNEL: ${{ github.workspace }}/kernel/kernel-6.6
+  DEFCONFIG: kernel/kernel-6.6/arch/arm64/configs/gki_defconfig
   KSU_VAR: ${{ github.event.inputs.ksu_variant || 'NO-ROOT' }}
 
 jobs:
@@ -96,16 +95,13 @@ jobs:
 
           case "${{ env.KSU_VAR }}" in
             "KSUN-SUSFS-v1.5.12")
-              patch -p1 < ${{ env.G_EXT }}/kernel_patches/wild/hooks/scope_min_manual_hooks_v1.4.patch || true
               patch -p1 < ${{ env.G_EXT }}/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch || true
-              patch -p1 < ${{ env.G_EXT }}/kernel_patches/wild/susfs_fix_patches/v1.5.12/1_fix_base.c.patch || true
               ;;
             "KSUN-SUSFS-DEV")
-              patch -p1 < ${{ env.G_EXT }}/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch || true
+           patch -p1 < ${{ env.G_EXT }}/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch || true
               ;;
             "KSU-TIAN-SUSFS"|"SUKISU-SUSFS")
               patch -p1 < ${{ env.G_EXT }}/susfs4ksu/kernel_patches/50_add_susfs_in_gki-android15-6.6.patch || true
-              patch -p1 < ${{ env.G_EXT }}/kernel_patches/wild/susfs_fix_patches/v1.5.12/1_fix_base.c.patch || true
               ;;
           esac
 
