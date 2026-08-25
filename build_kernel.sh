@@ -1,5 +1,30 @@
 #!/bin/bash
 
+mkdir bin
+export PATH="$(pwd)/bin:$PATH"
+
+sudo apt-get install curl wget -y
+
+curl https://storage.googleapis.com/git-repo-downloads/repo > bin/repo
+chmod a+x bin/repo
+
+mkdir aosp-kernel && cd aosp-kernel
+repo init -u https://android.googlesource.com/kernel/manifest -b common-android15-6.6 --depth=1
+repo sync -j$(nproc --all)
+cd prebuilts/clang/host/linux-x86
+wget -O clang-r536225.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main-kernel-2025/clang-r536225.tar.gz
+mkdir clang-r536225; cd clang-r536225
+tar xvzf ../clang-r536225.tar.gz
+rm ../clang-r536225.tar.gz
+cd ..
+cd kleaf
+sed -i '/# keep sorted/a\    "r536225",' versions.bzl
+cat versions.bzl
+cd ..
+cd ../../../../
+ln -s "$(pwd)/prebuilts" "$(pwd)/../kernel/prebuilts"
+cd ..
+
 cd kernel
 
 FTP="
@@ -27,16 +52,7 @@ export DEFCONFIG_OVERLAYS="sec_ogki_fragment.config mt6877_overlay.config mt6877
 export PROJECT="mgk_64_k66"
 export MODE="user"
 export SOURCE_DATE_EPOCH="$(date +%s)"
-export SEC_BUILDNUMBER="ogkiA346XXXUBEYI7"
+export SEC_BUILDNUMBER="ogkiA346BXXUBEYI7"
 
 chmod +x ./kernel_device_modules-6.6/build.sh
 ./kernel_device_modules-6.6/build.sh
-
-cd ..
-wget -O boot.img https://github.com/Fede2782/proprietary_vendor_samsung_a34x/releases/latest/download/boot.img
-mkdir bootimg && cd bootimg
-$MBOOT unpack ../boot.img
-cp ../out/target/product/a34x/obj/KLEAF_OBJ/dist/kernel_device_modules-6.6/mgk_64_k66_kernel_aarch64.user/Image kernel
-PATCHVBMETAFLAG=true $MBOOT repack ../boot.img out-boot.img
-mv out-boot.img ../boot.img
-cd ..
