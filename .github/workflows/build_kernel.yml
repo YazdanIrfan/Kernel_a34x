@@ -1,6 +1,7 @@
 name: Build boot.image
 
 on:
+  push:
   pull_request:
   workflow_dispatch:
     inputs:
@@ -34,9 +35,10 @@ permissions:
 
 env:
   G_WORKSPACE: ${{ github.workspace }}
+  G_BIN: ${{ github.workspace }}/bin
   G_EXT: ${{ github.workspace }}/external_deps
-  G_KERNEL: ${{ github.workspace }}/kernel/kernel-6.6
-  DEFCONFIG: kernel/kernel-6.6/arch/arm64/configs/gki_defconfig
+  G_KERNEL: ${{ github.workspace }}/kernel-6.6
+  DEFCONFIG: kernel-6.6/arch/arm64/configs/gki_defconfig
   KSU_VAR: ${{ github.event.inputs.ksu_variant || 'NO-ROOT' }}
 
 jobs:
