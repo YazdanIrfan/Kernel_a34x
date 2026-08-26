@@ -50,6 +50,21 @@ jobs:
           submodules: true
           fetch-depth: 1
 
+      - name: Debug - Locate kernel source
+        run: |
+          echo "--- top-level of repo ---"
+          ls -la .
+          echo "--- top-level of 'kernel' dir (if it exists) ---"
+          ls -la kernel/ 2>/dev/null || echo "(no top-level 'kernel' directory)"
+          echo "--- any dir named kernel-6.6* (depth 5) ---"
+          find . -maxdepth 5 -type d -iname "kernel-6.6*" 2>/dev/null
+          echo "--- any dir named kernel_device_modules-6.6* (depth 5) ---"
+          find . -maxdepth 5 -type d -iname "kernel_device_modules-6.6*" 2>/dev/null
+          echo "--- any file named gki_defconfig (depth 8) ---"
+          find . -maxdepth 8 -iname "gki_defconfig" 2>/dev/null
+          echo "--- any drivers/Kconfig (marks the real kernel source root, depth 8) ---"
+          find . -maxdepth 8 -type f -path "*/drivers/Kconfig" 2>/dev/null
+
       - name: Cleanup & Setup External Deps
         run: |
           sudo apt-get remove --purge -y "php*" "dotnet*" "mysql*" "nodejs*" "clang*" "google*"
