@@ -35,8 +35,8 @@ permissions:
 env:
   G_WORKSPACE: ${{ github.workspace }}
   G_EXT: ${{ github.workspace }}/external_deps
-  G_KERNEL: ${{ github.workspace }}/kernel/kernel-6.6
-  DEFCONFIG: kernel/kernel-6.6/arch/arm64/configs/gki_defconfig
+  G_KERNEL: ${{ github.workspace }}/Kernel-6.6
+  DEFCONFIG: Kernel-6.6/arch/arm64/configs/gki_defconfig
   KSU_VAR: ${{ github.event.inputs.ksu_variant || 'NO-ROOT' }}
 
 jobs:
@@ -49,21 +49,6 @@ jobs:
         with:
           submodules: true
           fetch-depth: 1
-
-      - name: Debug - Locate kernel source
-        run: |
-          echo "--- top-level of repo ---"
-          ls -la .
-          echo "--- top-level of 'kernel' dir (if it exists) ---"
-          ls -la kernel/ 2>/dev/null || echo "(no top-level 'kernel' directory)"
-          echo "--- any dir named kernel-6.6* (depth 5) ---"
-          find . -maxdepth 5 -type d -iname "kernel-6.6*" 2>/dev/null
-          echo "--- any dir named kernel_device_modules-6.6* (depth 5) ---"
-          find . -maxdepth 5 -type d -iname "kernel_device_modules-6.6*" 2>/dev/null
-          echo "--- any file named gki_defconfig (depth 8) ---"
-          find . -maxdepth 8 -iname "gki_defconfig" 2>/dev/null
-          echo "--- any drivers/Kconfig (marks the real kernel source root, depth 8) ---"
-          find . -maxdepth 8 -type f -path "*/drivers/Kconfig" 2>/dev/null
 
       - name: Cleanup & Setup External Deps
         run: |
@@ -302,24 +287,27 @@ jobs:
           mv out/target/product/a34x/obj/KLEAF_OBJ/dist .
           cd dist; tar czvf ../dist.tar.gz *
 
-      # Note: this reads kernel/kernel-6.6 (not kernel-6.6) to match your repo layout.
+      # Note: your repo's top-level "Kernel-6.6" is the real kernel source root.
+      # (kernel/kernel-6.6 is a symlink pointing at "../kernel-6.6" — lowercase —
+      # which doesn't match the actual "Kernel-6.6" folder on a case-sensitive
+      # filesystem, so it's broken on the Linux CI runner.)
       - name: Extract the .config file from a kernel image
         run: |
-          bash kernel/kernel-6.6/scripts/extract-ikconfig Image >> kernel_config
+          bash Kernel-6.6/scripts/extract-ikconfig Image >> kernel_config
 
           export OSRC_RELEASE="$(cat build_kernel.sh | grep SEC_BUILDNUMBER | tail | sed 's/^export SEC_BUILDNUMBER\=\"//' | sed 's/\"$//' | sed 's/ogki//')"
           echo "Based on $OSRC_RELEASE Samsung Open Source Kernel source" >> versions.txt
           echo "KernelSU variant: ${{ env.KSU_VAR }}" >> versions.txt
           echo "osrc_release=$OSRC_RELEASE" >> $GITHUB_ENV
 
-          export VERSION="$(cat kernel/kernel-6.6/Makefile | grep 'VERSION = ' | head -n 1 | sed 's/VERSION = //')"
-          export PATCHLEVEL="$(cat kernel/kernel-6.6/Makefile | grep 'PATCHLEVEL = ' | head -n 1 | sed 's/PATCHLEVEL = //')"
-          export SUBLEVEL="$(cat kernel/kernel-6.6/Makefile | grep 'SUBLEVEL = ' | head -n 1 | sed 's/SUBLEVEL = //')"
+          export VERSION="$(cat Kernel-6.6/Makefile | grep 'VERSION = ' | head -n 1 | sed 's/VERSION = //')"
+          export PATCHLEVEL="$(cat Kernel-6.6/Makefile | grep 'PATCHLEVEL = ' | head -n 1 | sed 's/PATCHLEVEL = //')"
+          export SUBLEVEL="$(cat Kernel-6.6/Makefile | grep 'SUBLEVEL = ' | head -n 1 | sed 's/SUBLEVEL = //')"
           export KERNEL_VERSION="$VERSION.$PATCHLEVEL.$SUBLEVEL"
           echo "Linux Kernel ARM64 $KERNEL_VERSION" >> versions.txt
           echo "kernel_release=$KERNEL_VERSION" >> $GITHUB_ENV
 
-          export ASB_LEVEL="$(cat kernel/kernel-6.6/build.config.common | grep ASB_SPL | tail | sed 's/^ASB_SPL\=//')"
+          export ASB_LEVEL="$(cat Kernel-6.6/build.config.common | grep ASB_SPL | tail | sed 's/^ASB_SPL\=//')"
           echo "Merged $ASB_LEVEL android15-6.6 ASB Security Patch Level" >> versions.txt
           echo "asb_level=$ASB_LEVEL" >> $GITHUB_ENV
 
@@ -327,8 +315,8 @@ jobs:
           echo "asb_level=$ASB_LEVEL" >> build_info.txt
           echo "kernel_release=$KERNEL_VERSION" >> build_info.txt
           echo "ksu_variant=${{ env.KSU_VAR }}" >> build_info.txt
-          echo "$(grep 'BRANCH=' kernel/kernel-6.6/build.config.common)" >> build_info.txt
-          echo "$(grep 'KMI_GENERATION=' kernel/kernel-6.6/build.config.common)" >> build_info.txt
+          echo "$(grep 'BRANCH=' Kernel-6.6/build.config.common)" >> build_info.txt
+          echo "$(grep 'KMI_GENERATION=' Kernel-6.6/build.config.common)" >> build_info.txt
 
       # Kept your own boot.img pipeline (mkbootimg + avbtool) instead of KSU.zip's
       # "download Fede2782's boot.img and repack with magiskboot" method — your
