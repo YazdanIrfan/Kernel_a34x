@@ -50,6 +50,17 @@ jobs:
           submodules: true
           fetch-depth: 1
 
+      # Your repo has a broken symlink: kernel/kernel-6.6 -> ../kernel-6.6 (lowercase),
+      # but the real directory is top-level "Kernel-6.6" (capital K). On a case-sensitive
+      # filesystem that symlink never resolves. build_kernel.sh's own gen_build_config.py
+      # pipeline (and the build.config files it generates) rely on this exact relative
+      # path resolving from inside kernel/, so fix it here before anything else runs.
+      - name: Fix kernel-6.6 symlink case mismatch
+        run: |
+          rm -f kernel/kernel-6.6
+          ln -sfn ../Kernel-6.6 kernel/kernel-6.6
+          ls -la kernel/kernel-6.6
+
       - name: Cleanup & Setup External Deps
         run: |
           sudo apt-get remove --purge -y "php*" "dotnet*" "mysql*" "nodejs*" "clang*" "google*"
@@ -381,7 +392,7 @@ jobs:
           path: boot.img
 
       - name: Upload release assets
-        if: github.event.inputs.release
+        if: github.event.inputs.release == 'true'
         uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
