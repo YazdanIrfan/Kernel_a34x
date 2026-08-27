@@ -337,9 +337,14 @@ jobs:
       # not at the workspace root — this path was wrong in the original workflow too.
       - name: Build boot image
         run: |
+          echo "--- contents of kernel/tools/mkbootimg (debug) ---"
+          ls -la kernel/tools/mkbootimg
+          echo "--- contents of kernel/tools/avbtool (debug, in case it's also a dir) ---"
+          ls -la kernel/tools/avbtool 2>/dev/null || echo "(avbtool is not a directory)"
+
           export ASB_LEVEL_SHORT="$(echo "${{ env.asb_level }}" | cut -f 1 -d'-')-$(echo "${{ env.asb_level }}" | cut -f 2 -d'-')"
           cat Image | gzip -n -f -9 > Image.gzip
-          python3 kernel/tools/mkbootimg -o boot.img --header_version 4 --os_version 15.0.0 --os_patch_level "$ASB_LEVEL_SHORT" --kernel Image.gzip --ramdisk kernel/tools/ramdisk --cmdline ''
+          python3 kernel/tools/mkbootimg/mkbootimg.py -o boot.img --header_version 4 --os_version 15.0.0 --os_patch_level "$ASB_LEVEL_SHORT" --kernel Image.gzip --ramdisk kernel/tools/ramdisk --cmdline ''
           python3 kernel/tools/avbtool append_vbmeta_image --image boot.img --vbmeta_image kernel/tools/boot_vbmeta --partition_size 33554432
 
       - name: Build boot image tar
